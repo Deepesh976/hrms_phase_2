@@ -198,14 +198,19 @@ if (isManuallyProvided(data.lop, existingData.lop)) {
   }
 
   // Professional Tax
-  let pt = 0;
-  if (isManuallyProvided(data.pt, existingData.pt)) {
-    pt = safe(data.pt);
+let pt = 0;
+
+if (isManuallyProvided(data.pt, existingData.pt)) {
+  pt = safe(data.pt);
+} else {
+  if (grossPay <= 15000) {
+    pt = 0;
+  } else if (grossPay <= 20000) {
+    pt = 150;
   } else {
-    if (grossPay > 20000) pt = 200;
-    else if (grossPay > 15000) pt = 150;
-    else pt = 100;
+    pt = 200;
   }
+}
 
   // Other calculations
   // GPAP should always be 0 unless manually entered
@@ -342,9 +347,11 @@ const salaryHistories = await SalaryHistory.find({ empId })
       const month = summary.month;
       const year = summary.year;
 
-      const monthName = summary.monthName || new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+      const MONTH_MAP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-          const existingSalary = await Salary.findOne({
+const monthName = MONTH_MAP[month - 1];
+
+const existingSalary = await Salary.findOne({
   empId,
   year,
   month: monthName
@@ -360,7 +367,16 @@ const totalALF = safe(summary.totalALF);
 const totalALH = safe(summary.totalALH);
 
 // AL
-const usedAL = totalALF + (totalALH * 0.5);
+const usedAL = totalALF + totalALH;
+
+console.log("AL DEBUG:", {
+  empId,
+  month,
+  year,
+  totalALF,
+  totalALH,
+  usedAL
+});
 
 const totalPL = safe(summary.totalPL || 0);
 const totalBLML = safe(summary.totalBLML || 0);
@@ -483,13 +499,33 @@ const base = {
   actualCTCWithoutLOP: actualCTC
 };
 
-// 🔥 REMOVE OLD GPAP BEFORE COMPUTE
+// 🧠 Preserve manual fields
+let manualFields = {};
+
 if (existingSalary) {
-  existingSalary.gpap = undefined;
+  manualFields = {
+    otherDeductions: existingSalary.otherDeductions,
+    gpap: existingSalary.gpap
+  };
 }
 
-const computed = computeDerivedFields(base, existingSalary || {});
-allDocs.push({ ...base, ...computed });
+// 🔥 Merge base + manual
+const finalData = {
+  ...base,
+  ...manualFields
+};
+
+// 🔥 Recompute correctly
+const computed = computeDerivedFields(
+  finalData,
+  existingSalary ? existingSalary._doc : {}
+);
+
+// 💾 Save
+allDocs.push({
+  ...finalData,
+  ...computed
+});
 
 
       // carriedAL = remainingAL;
