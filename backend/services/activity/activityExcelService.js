@@ -10,6 +10,7 @@ const {
 ========================= */
 const OFFICE_START = '09:16:00';
 const OFFICE_END = '17:30:00';
+const NEXT_DAY_CUTOFF = 3 * 3600; // 03:00:00
 
 /* =========================
    MONTH MAP
@@ -107,7 +108,7 @@ const parseExcelDateCell = (cell, fromDate, toDate) => {
 };
 
 /* =========================
-   AUTO TIME CALCULATOR
+   AUTO TIME CALCULATOR (03:00 RULE FIXED)
 ========================= */
 const calculateDayTimes = (inTime, outTime) => {
   const inSec = timeToSeconds(inTime);
@@ -120,17 +121,41 @@ const calculateDayTimes = (inTime, outTime) => {
   let ot = '00:00:00';
   let duration = '00:00:00';
 
+  /* =========================
+     IN TIME CALC
+  ========================= */
   if (inSec !== null) {
     if (inSec > startSec) lateBy = secondsToTime(inSec - startSec);
     else if (inSec < startSec) earlyBy = secondsToTime(startSec - inSec);
   }
 
-  if (outSec !== null && outSec > endSec) {
-    ot = secondsToTime(outSec - endSec);
+  /* =========================
+     🔥 OVERNIGHT FIX (03:00 LIMIT)
+  ========================= */
+  let adjustedOutSec = outSec;
+
+  if (inSec !== null && outSec !== null && outSec < inSec) {
+    if (outSec <= NEXT_DAY_CUTOFF) {
+      // ✅ valid overnight (till 03:00)
+      adjustedOutSec = outSec + (24 * 3600);
+    } else {
+      // ❌ belongs to next day
+      adjustedOutSec = null;
+    }
   }
 
-  if (inSec !== null && outSec !== null && outSec > inSec) {
-    duration = secondsToTime(outSec - inSec);
+  /* =========================
+     OT CALCULATION
+  ========================= */
+  if (adjustedOutSec !== null && adjustedOutSec > endSec) {
+    ot = secondsToTime(adjustedOutSec - endSec);
+  }
+
+  /* =========================
+     DURATION CALCULATION
+  ========================= */
+  if (inSec !== null && adjustedOutSec !== null) {
+    duration = secondsToTime(adjustedOutSec - inSec);
   }
 
   return { lateBy, earlyBy, ot, duration };

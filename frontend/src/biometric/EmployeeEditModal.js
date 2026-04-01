@@ -205,9 +205,6 @@ const EmployeeEditModal = ({ isOpen, onClose, employeeId, onSave }) => {
                 <h2 className="modal-title">
                   {employeeId ? 'Edit Employee Details' : 'Add New Employee'}
                 </h2>
-                <p className="modal-subtitle">
-                  {employeeId ? `Modifying profile for ${formData.empName || 'Employee'}` : 'Fill in the details to create a new employee profile'}
-                </p>
               </div>
             </div>
             <button className="close-button" onClick={onClose} title="Close">

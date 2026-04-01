@@ -668,127 +668,136 @@ const filteredData = data.filter((emp) => {
           <p className="employee-subheading">Manage and view all employees</p>
         </div>
 
-        {/* Controls Card */}
-        <div className="controls-card">
-          <div className="filter-row">
-            <div className="search-box">
-              <FaSearch className="icon-search" />
-              <input
-                className="search-input"
-                type="text"
-                placeholder="Search name or ID..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+{/* Controls Card */}
+<div className="controls-card">
+  {/* FILTER ROW */}
+  <div className="filter-row">
+    
+    {/* Search */}
+    <div className="search-box">
+      <FaSearch className="icon-search" />
+      <input
+        className="search-input"
+        type="text"
+        placeholder="Search by name or employee ID..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
 
-            <div className="filter-group">
-              <div className="filter-select-wrapper">
-                <FaFilter className="icon-filter" />
-                <select
-                  className="filter-select"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                >
-                  <option value="">All Departments</option>
-                  {departmentOptions.map((dep) => (
-                    <option key={dep} value={dep}>
-                      {dep}
-                    </option>
-                  ))}
-                </select>
-              </div>
+    {/* Dropdowns (RIGHT SIDE - HORIZONTAL) */}
+    <div className="filter-group">
+      <div className="filter-select-wrapper">
+        <select
+          className="filter-select"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+        >
+          <option value="">All Departments</option>
+          {departmentOptions.map((dep) => (
+            <option key={dep} value={dep}>
+              {dep}
+            </option>
+          ))}
+        </select>
+      </div>
 
-              <div className="filter-select-wrapper">
-                <FaFilter className="icon-filter" />
-                <select
-                  className="filter-select"
-                  value={empUnit}
-                  onChange={(e) => setEmpUnit(e.target.value)}
-                >
-                  <option value="">All Units</option>
-                  {empUnitOptions.map((unit) => (
-                    <option key={unit} value={unit}>
-                      {unit}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+      <div className="filter-select-wrapper">
+        <select
+          className="filter-select"
+          value={empUnit}
+          onChange={(e) => setEmpUnit(e.target.value)}
+        >
+          <option value="">All Units</option>
+          {empUnitOptions.map((unit) => (
+            <option key={unit} value={unit}>
+              {unit}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  </div>
 
-          {canManage && (
-            <div className="actions-row">
-              <div className="action-group">
-                <label
-                  htmlFor="upload"
-                  className={`btn btn-upload ${uploading ? 'disabled' : ''}`}
-                >
-                  {uploading ? <FaSpinner className="spin" /> : <FaCloudUploadAlt />}
-                  {uploading ? 'Uploading...' : 'Upload Excel'}
-                </label>
-                <input
-                  id="upload"
-                  type="file"
-                  accept=".xlsx, .xls"
-                  style={{ display: 'none' }}
-                  onChange={uploading ? undefined : handleUpload}
-                  disabled={uploading}
-                />
+  {/* ACTIONS */}
+  {canManage && (
+    <div className="actions-row">
 
-                <button
-                  onClick={handleAdd}
-                  className="btn btn-primary"
-                  disabled={uploading}
-                >
-                  <FaPlus /> Add Employee
-                </button>
-              </div>
+      {/* LEFT SIDE */}
+      <div className="action-group">
+        <label
+          htmlFor="upload"
+          className={`btn btn-upload ${uploading ? 'disabled' : ''}`}
+        >
+          {uploading ? <FaSpinner className="spin" /> : <FaCloudUploadAlt />}
+          {uploading ? 'Uploading...' : 'Upload Excel'}
+        </label>
 
-              <div className="action-group">
-                <button
-                  onClick={handleEdit}
-                  className="btn btn-secondary"
-                  disabled={uploading || data.length === 0}
-                  title={data.length === 0 ? 'No employees to edit' : 'Select an employee to edit'}
-                >
-                  <FaEdit /> Edit
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="btn btn-danger"
-                  disabled={uploading || data.length === 0}
-                  title={data.length === 0 ? 'No employees to delete' : 'Select employees to delete'}
-                >
-                  <FaTrash /> Delete
-                </button>
+        <input
+          id="upload"
+          type="file"
+          accept=".xlsx, .xls"
+          style={{ display: 'none' }}
+          onChange={uploading ? undefined : handleUpload}
+          disabled={uploading}
+        />
 
-                {canDeleteAll && (
-                  <button
-                    onClick={handleDeleteAll}
-                    className="btn btn-danger-outline"
-                    disabled={uploading || data.length === 0}
-                    title={data.length === 0 ? 'No employees to remove' : 'Remove all employee data'}
-                  >
-                    <FaEraser /> Remove All
-                  </button>
-                )}
-              </div>
+        <button
+          onClick={handleAdd}
+          className="btn btn-primary"
+          disabled={uploading}
+        >
+          <FaPlus /> Add
+        </button>
+      </div>
 
-              {fileUploaded && !uploading && (
-                <div className="upload-status-badge success">
-                  <FaCheckCircle /> Uploaded
-                </div>
-              )}
-              {uploading && (
-                <div className="upload-status-badge processing">
-                  <FaSpinner className="spin" /> Processing
-                </div>
-              )}
-            </div>
-          )}
+      {/* RIGHT SIDE */}
+      <div className="action-group">
+        <button
+          onClick={handleEdit}
+          className="btn btn-secondary"
+          disabled={uploading || data.length === 0}
+          title={data.length === 0 ? 'No employees to edit' : 'Select an employee to edit'}
+        >
+          <FaEdit /> Edit
+        </button>
+
+        <button
+          onClick={handleDelete}
+          className="btn btn-danger"
+          disabled={uploading || data.length === 0}
+          title={data.length === 0 ? 'No employees to delete' : 'Select employees to delete'}
+        >
+          <FaTrash /> Delete
+        </button>
+
+        {canDeleteAll && (
+          <button
+            onClick={handleDeleteAll}
+            className="btn btn-danger-outline"
+            disabled={uploading || data.length === 0}
+            title={data.length === 0 ? 'No employees to remove' : 'Remove all employee data'}
+          >
+            <FaEraser /> Remove All
+          </button>
+        )}
+      </div>
+
+      {/* STATUS BADGES */}
+      {fileUploaded && !uploading && (
+        <div className="upload-status-badge success">
+          <FaCheckCircle /> Uploaded
         </div>
+      )}
 
+      {uploading && (
+        <div className="upload-status-badge processing">
+          <FaSpinner className="spin" /> Processing
+        </div>
+      )}
+    </div>
+  )}
+</div>
         {/* Table Card */}
         <div className="table-card">
           <div className="table-wrapper">

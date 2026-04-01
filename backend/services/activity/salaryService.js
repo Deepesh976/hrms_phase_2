@@ -250,14 +250,19 @@ const daysPaid = isManuallyProvided(data.daysPaid, existingData.daysPaid)
     esiEmployerShare = (grossPay + plb) * 0.0325;
   }
 
-  let pt = 0;
-  if (isManuallyProvided(data.pt, existingData.pt)) {
-    pt = safe(data.pt);
+let pt = 0;
+
+if (isManuallyProvided(data.pt, existingData.pt)) {
+  pt = safe(data.pt);
+} else {
+  if (grossPay <= 15000) {
+    pt = 0;
+  } else if (grossPay <= 20000) {
+    pt = 150;
   } else {
-    if (grossPay > 20000) pt = 200;
-    else if (grossPay > 15000) pt = 150;
-    else pt = 100;
+    pt = 200;
   }
+}
 
 const gpap = data.gpap !== undefined
   ? safe(data.gpap)   // only if coming from manual update
@@ -457,8 +462,9 @@ const generateSalaryRecords = async () => {
     for (const summary of empSummaries) {
 
       const month = summary.month;
-      const year = summary.year;
+      const year = summary.year
       const monthName = MONTH_MAP[month - 1];
+      const resolvedCTC = await getCTCForMonth(empId, year, monthName);
 
       const existingSalary = await Salary.findOne({
         empId,
@@ -485,7 +491,16 @@ const totalALH = safe(summary.totalALH);
 
 const usedAL =
   totalALF +
-  (totalALH * 0.5);
+  totalALH;
+
+  console.log("AL DEBUG:", {
+  empId,
+  month,
+  year,
+  totalALF,
+  totalALH,
+  usedAL
+});
 
 const totalPL = safe(summary.totalPL || 0);
 const totalBLML = safe(summary.totalBLML || 0);
@@ -547,12 +562,10 @@ console.log(
         // Leave
         // Leave
 al: usedAL,
+AL: usedAL,
 pl: totalPL,
 blOrMl: totalBLML,
 lop: lopDays,
-
-// Attendance FIX
-daysWorked,
 
         // Salary Inputs
         consileSalary: safe(input.CONSILESALARY),
@@ -568,14 +581,33 @@ daysWorked,
           resolvedCTC ?? input.ActualCTCWithoutLossOfPay ?? 0
         )
       };
+// 🧠 Preserve ONLY manual fields
+let manualFields = {};
 
-// 🔥 REMOVE ANY OLD GPAP BEFORE COMPUTE
 if (existingSalary) {
-  existingSalary.gpap = undefined;
+  manualFields = {
+    otherDeductions: existingSalary.otherDeductions,
+    gpap: existingSalary.gpap
+  };
 }
 
-const computed = computeDerivedFields(base, existingSalary || {});
-allDocs.push({ ...base, ...computed });
+// 🔥 Merge base + manual
+const finalData = {
+  ...base,
+  ...manualFields
+};
+
+// 🔥 Recompute using existing data
+const computed = computeDerivedFields(
+  finalData,
+  existingSalary ? existingSalary._doc : {}
+);
+
+// 💾 Save
+allDocs.push({
+  ...finalData,
+  ...computed
+});
     }
   }
 
