@@ -187,18 +187,19 @@ const computeDerivedFields = (data, existingData = {}) => {
   } else {
     if (grossPay > 20000) pt = 200;
     else if (grossPay > 15000) pt = 150;
-    else pt = 0;
+    else pt = 100;
   }
 
-const gpap =
-  data.gpap !== undefined
-    ? safe(data.gpap)
-    : safe(existingData.gpap || 0);
+const gpap = isManuallyProvided(data.gpap, existingData.gpap)
+  ? safe(data.gpap)
+  : 0;
 
-const otherDeductions =
-  data.otherDeductions !== undefined
+  const otherDeductions = isManuallyProvided(
+    data.otherDeductions,
+    existingData.otherDeductions
+  )
     ? safe(data.otherDeductions)
-    : safe(existingData.otherDeductions || 0);
+    : 0;
 
   const pf = isManuallyProvided(data.pf, existingData.pf)
     ? safe(data.pf)
@@ -263,6 +264,9 @@ if (req.user.role === "hrms_handler" || req.user.role === "super_admin") {
 
   summaries = await MonthlySummary.find();
 
+  // delete ALL salary records before regenerating
+  await Salary.deleteMany({});
+
 }
 
 /* ===============================
@@ -277,6 +281,11 @@ else if (req.user.role === "unit_hr") {
   empIds = employees.map(e => e.empId);
 
   summaries = await MonthlySummary.find({
+    empId: { $in: empIds }
+  });
+
+  // delete only their employees salary
+  await Salary.deleteMany({
     empId: { $in: empIds }
   });
 
@@ -333,7 +342,7 @@ const alf = safe(summary.totalALF);
 const alh = safe(summary.totalALH);
 
 // ✅ AL = only full AL + half AL (correct)
-const al = alf + alh;
+const al = alf + (alh * 0.5);
 
 // Days worked should include effective worked attendance days plus WO/HO.
 const daysWorked =
@@ -400,44 +409,13 @@ const daysPaid =
        🔥 DERIVED FIELDS
     ========================= */
 
-// 🔍 Get existing salary (to preserve manual edits)
-const existingSalary = await Salary.findOne({
-  empId,
-  year,
-  month: monthName
-});
+    const computed = computeDerivedFields(base);
 
-// 🧠 Extract manual fields
-let manualFields = {};
-
-if (existingSalary) {
-  manualFields = {
-    otherDeductions: existingSalary.otherDeductions,
-    gpap: existingSalary.gpap,
-  };
-}
-
-// 🔥 Merge + recompute
-const finalData = {
-  ...base,
-  ...manualFields
-};
-
-const computed = computeDerivedFields(
-  finalData,
-  existingSalary?._doc || {}
-);
-
-await Salary.updateOne(
-  { empId, year, month: monthName },
-  {
-    $set: {
-      ...finalData,
-      ...computed
-    }
-  },
-  { upsert: true }
-);
+    await Salary.updateOne(
+      { empId, year, month: monthName },
+      { $set: { ...base, ...computed } },
+      { upsert: true }
+    );
 
     count++;
   }

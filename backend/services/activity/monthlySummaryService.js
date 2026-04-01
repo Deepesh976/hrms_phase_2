@@ -66,8 +66,6 @@ const calculateMonthlySummary = (empId, empName, activities, cycleKey) => {
   let totalWOCount = 0;
   let totalHOCount = 0;
   let weeklyOffPresent = 0;
-  let workedALH = 0;
-  let manualALH = 0;
 
   /* =========================
      COUNT STATUS
@@ -98,24 +96,21 @@ case 'ALH':
   totalALH += 0.5;
 
   if (act.originalStatus === 'A') {
-    // Manual ALH
+    // Case 1: A → ALH
     totalPresent += 0.5;
     totalAbsent += 0.5;
-    manualALH += 0.5;
   }
 
   else if (act.originalStatus === '½P') {
-    // Worked ALH
-    totalPresent += 1;
-    workedALH += 0.5;
+    // Case 2: ½P → ALH
+    totalPresent += 1;   // 🔥 full day now
+    // DO NOT add absent
   }
 
   else {
+    // fallback (safe default)
     totalPresent += 0.5;
-    manualALH += 0.5;
   }
-
-  break;
 
   break;
 
@@ -163,7 +158,13 @@ case 'ALH':
      DAYS WORKED (FOR SALARY)
   ========================================================= */
 
-const daysWorked = totalPresent;
+  // ✅ FIXED: completed calculation
+  const daysWorked =
+    totalPresent +
+    totalWOCount +
+    totalHOCount +
+    totalALF +
+    (totalALH || 0);
 
   /* =========================================================
      DEBUG

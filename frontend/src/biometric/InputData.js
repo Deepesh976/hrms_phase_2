@@ -458,88 +458,33 @@ const handleDeleteSelected = async () => {
         </table>
       </div>
 
-      {/* ========== MODERN PAGINATION ========== */}
-      <div className="inputdata-pagination-section">
-        <div className="inputdata-pagination-info">
-          Showing <strong>{(currentPage - 1) * rowsPerPage + 1}</strong> to <strong>{Math.min(currentPage * rowsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong> records
-        </div>
+      <div className="inputdata-pagination">
 
-        <div className="inputdata-pagination-controls">
-          <button
-            className="inputdata-pagination-btn"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            ◀ Prev
-          </button>
+  <button
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage(currentPage - 1)}
+  >
+    ◀ Prev
+  </button>
 
-          <div className="inputdata-pagination-numbers">
-            {totalPages <= 7 ? (
-              // Show all pages if 7 or fewer
-              [...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  className={`inputdata-pagination-btn ${currentPage === i + 1 ? "active-page" : ""}`}
-                  onClick={() => setCurrentPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))
-            ) : (
-              // Show ellipsis for many pages
-              <>
-                {currentPage > 3 && (
-                  <>
-                    <button
-                      className="inputdata-pagination-btn"
-                      onClick={() => setCurrentPage(1)}
-                    >
-                      1
-                    </button>
-                    <span className="inputdata-pagination-ellipsis">...</span>
-                  </>
-                )}
+  {[...Array(totalPages)].map((_, i) => (
+    <button
+      key={i}
+      className={currentPage === i + 1 ? "active-page" : ""}
+      onClick={() => setCurrentPage(i + 1)}
+    >
+      {i + 1}
+    </button>
+  ))}
 
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  if (pageNum >= currentPage - 1 && pageNum <= currentPage + 1) {
-                    return (
-                      <button
-                        key={i}
-                        className={`inputdata-pagination-btn ${currentPage === pageNum ? "active-page" : ""}`}
-                        onClick={() => setCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  }
-                  return null;
-                })}
+  <button
+    disabled={currentPage === totalPages}
+    onClick={() => setCurrentPage(currentPage + 1)}
+  >
+    Next ▶
+  </button>
 
-                {currentPage < totalPages - 2 && (
-                  <>
-                    <span className="inputdata-pagination-ellipsis">...</span>
-                    <button
-                      className="inputdata-pagination-btn"
-                      onClick={() => setCurrentPage(totalPages)}
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-
-          <button
-            className="inputdata-pagination-btn"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Next ▶
-          </button>
-        </div>
-      </div>
+</div>
 
       {/* -------- Remove Upload Confirmation Modal -------- */}
       <AnimatePresence>
