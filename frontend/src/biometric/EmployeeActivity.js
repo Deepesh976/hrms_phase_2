@@ -39,15 +39,31 @@ const normalizeLocalDate = (d) => {
 
 const STATUS_TOAST_ID = 'status-update-toast';
 
+// ✅ GLOBAL helper (accessible everywhere)
+const isLate = (lateBy) => {
+  if (!lateBy || typeof lateBy !== 'string') return false;
+
+  const parts = lateBy.split(':').map(Number);
+  if (parts.length < 3) return false;
+
+  const seconds =
+    (parts[0] || 0) * 3600 +
+    (parts[1] || 0) * 60 +
+    (parts[2] || 0);
+
+  return seconds > 0;
+};
+
+// ✅ Your existing function (clean now)
 const formatDateLocal = (dateStr) => {
   if (!dateStr) return '';
 
-const d = new Date(dateStr);
-return d.toLocaleDateString('en-GB', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-});
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 };
 
 const EmployeeActivity = () => {
@@ -625,10 +641,13 @@ const getStatusColor = (status) => {
 
   <tbody>
     {currentPageData.map((item, idx) => (
-      <tr
-        key={item._id || idx}
-        className={item.isStatusModified ? 'ea-row-modified' : ''}
-      >
+<tr
+  key={item._id || idx}
+  className={`
+    ${item.isStatusModified ? 'ea-row-modified' : ''}
+    ${isLate(item.lateBy) && item.status !== 'A' ? 'ea-row-late' : ''}
+  `}
+>
         <td>{startIndex + idx + 1}</td>
         <td>{formatDateLocal(item.date)}</td>
         <td>{item.empId}</td>
@@ -1102,7 +1121,14 @@ title={
 ========================= */}
 {showCommentModal && commentActivity && (
   <div className="ea-modal-overlay">
-    <div className="ea-modal" style={{ minWidth: '500px' }}>
+    <div
+  className="ea-modal"
+  style={{
+    minWidth: '500px',
+    maxHeight: '85vh',
+    overflowY: 'auto'
+  }}
+>
       <div className="ea-modal-header">
         <h3>📝 Attendance Status Change</h3>
         <button onClick={() => setShowCommentModal(false)} title="Close">
@@ -1242,20 +1268,32 @@ title={
         {/* =========================
             CHANGE META
         ========================= */}
-        <div style={{ marginBottom: '20px' }}>
-          <p style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600' }}>
-            CHANGED BY
-          </p>
-          <p style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937' }}>
-            {commentActivity.statusChangedBy || 'System'}
-          </p>
+<div style={{ marginBottom: '20px' }}>
+  <p style={{ fontSize: '12px', color: '#6b7280', fontWeight: '600' }}>
+    CHANGED BY
+  </p>
 
-          {commentActivity.statusChangeDate && (
-            <p style={{ fontSize: '12px', color: '#6b7280' }}>
-              On {new Date(commentActivity.statusChangeDate).toLocaleString()}
-            </p>
-          )}
-        </div>
+  <p style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937' }}>
+    {commentActivity.statusChangedByName ? (
+      <>
+        {commentActivity.statusChangedByName}
+        {commentActivity.statusChangedByRole && (
+          <span style={{ color: '#6366f1', marginLeft: '6px', fontWeight: '500' }}>
+            ({commentActivity.statusChangedByRole})
+          </span>
+        )}
+      </>
+    ) : (
+      'System'
+    )}
+  </p>
+
+  {commentActivity.statusChangeDate && (
+    <p style={{ fontSize: '12px', color: '#6b7280' }}>
+      On {new Date(commentActivity.statusChangeDate).toLocaleString()}
+    </p>
+  )}
+</div>
 
         {/* =========================
             REASON

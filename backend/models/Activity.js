@@ -106,6 +106,16 @@ const activitySchema = new mongoose.Schema(
       default: null,
     },
 
+    statusChangedByName: {
+      type: String,
+      default: null,
+    },
+
+    statusChangedByRole: {
+      type: String,
+      default: null,
+    },
+
     statusChangeDate: {
       type: Date,
       default: null,
