@@ -316,7 +316,9 @@ if (role === 'unit_hr') {
 
     activity.status = newStatus;
     activity.statusChangeReason = changeReason.trim();
-    activity.statusChangedBy = req.user?.id || 'system';
+    activity.statusChangedBy = req.user?.id || null;
+    activity.statusChangedByName = req.user?.name || req.user?.username || 'Unknown';
+    activity.statusChangedByRole = req.user?.role || 'system';
     activity.statusChangeDate = new Date();
     activity.isStatusModified = true;
 

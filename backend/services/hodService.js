@@ -119,16 +119,8 @@ if (existingHOD) {
   throw new Error('HOD already exists with this phone number');
 }
 
-// Check if email already exists (optional)
-const trimmedEmail = email ? email.trim() : null;
+const trimmedEmail = email ? email.trim().toLowerCase() : null;
 
-if (trimmedEmail) {
-  const existingEmail = await User.findOne({ email: trimmedEmail });
-
-  if (existingEmail) {
-    throw new Error('Email already exists');
-  }
-}
 
   /* =====================================================
      CREATE HOD USER
@@ -204,22 +196,11 @@ if (unit !== undefined) {
      UPDATE EMAIL (OPTIONAL)
   ===================================================== */
 
-  if (email !== undefined) {
-    const trimmedEmail = email ? email.trim() : null;
+if (email !== undefined) {
+  const trimmedEmail = email ? email.trim().toLowerCase() : null;
+  hod.email = trimmedEmail;
+}
 
-    if (trimmedEmail && trimmedEmail !== hod.email) {
-      const existingEmail = await User.findOne({
-        email: trimmedEmail,
-        _id: { $ne: hodId }
-      });
-
-      if (existingEmail) {
-        throw new Error('Email already exists');
-      }
-    }
-
-    hod.email = trimmedEmail;
-  }
 
   /* =====================================================
      UPDATE ACTIVE STATUS

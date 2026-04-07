@@ -109,6 +109,18 @@
   letter-spacing: 0.5px;
 }
 
+.ea-table tbody tr.ea-row-late {
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.ea-table tbody tr.ea-row-late:hover {
+  background: rgba(251, 191, 36, 0.25);
+}
+
+.ea-row-late:hover {
+  background: rgba(251, 191, 36, 0.25) !important;
+}
+
 /* =========================
    CONTROLS & FILTERS
 ========================= */

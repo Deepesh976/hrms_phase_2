@@ -6,6 +6,16 @@ import EmployeeNavbar from '../components/Navbar/employeenavbar';
 import axios from '../api/axios';
 import './EmployeeAttendance.css';
 
+const statusLabels = {
+  ALF: 'Annual Leave Full',
+  ALH: 'Annual Leave Half',
+  WO: 'Weekly Off',
+  HO: 'Holiday',
+  Present: 'Present',
+  Absent: 'Absent',
+  Late: 'Late',
+};
+
 const styles = {
   container: {
     padding: '2rem',
@@ -251,15 +261,28 @@ const EmployeeAttendance = () => {
         else if (activity.status === '½P' || activity.status === 'HP') status = 'Late';
         else if (activity.status === 'WO') status = 'WO';
         else if (activity.status === 'HO') status = 'HO'; 
+        else if (activity.status === 'ALF') status = 'ALF';  
+        else if (activity.status === 'ALH') status = 'ALH'; 
         else if (activity.status === 'L') status = 'Absent';
 
-        const formatTime = (timeStr) => {
-          if (!timeStr || timeStr === '00:00:00' || timeStr === '00:00') return '-';
-          if (timeStr.includes(':') && timeStr.split(':').length === 3) {
-            return timeStr.substring(0, 5);
-          }
-          return timeStr;
-        };
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return '00:00:00';
+
+  const parts = timeStr.split(':');
+
+  // HH:MM → convert to HH:MM:SS
+  if (parts.length === 2) {
+    return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:00`;
+  }
+
+  // HH:MM:SS → keep as is
+  if (parts.length === 3) {
+    return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:${parts[2].padStart(2, '0')}`;
+  }
+
+  return '00:00:00';
+};
 
         const formatDuration = (durationStr) => {
           if (!durationStr || durationStr === '00:00:00' || durationStr === '00:00') return '-';
@@ -281,15 +304,22 @@ const EmployeeAttendance = () => {
           return `${y}-${m}-${day}`;
         };
 
-        return {
-          id: activity._id || index,
-          date: formatDateLocal(activity.date),
-          status,
-          checkIn: formatTime(activity.timeInActual),
-          checkOut: formatTime(activity.timeOutActual),
-          workingHours: formatDuration(activity.duration),
-          shift: activity.shift || 'Day Shift',
-        };
+console.log(activity);
+
+return {
+  id: activity._id || index,
+  date: formatDateLocal(activity.date),
+  status,
+  checkIn: formatTime(activity.timeInActual),
+  checkOut: formatTime(activity.timeOutActual),
+  workingHours: formatDuration(activity.duration),
+  shift: activity.shift || 'Day Shift',
+
+  // 🔥 USE THIS INSTEAD
+  lateBy: activity.lateBy,
+};
+
+
       });
 
       setAttendanceData(transformedData);
@@ -341,9 +371,13 @@ const EmployeeAttendance = () => {
 
   const stats = useMemo(() => {
     const totalDays = filteredData.length;
-    const presentDays = filteredData.filter(
-      (i) => i.status === 'Present' || i.status === 'Late'
-    ).length;
+const presentDays = filteredData.filter(
+  (i) =>
+    i.status === 'Present' ||
+    i.status === 'Late' ||
+    i.status === 'ALF' ||
+    i.status === 'ALH'
+).length;
     const absentDays = filteredData.filter((i) => i.status === 'Absent').length;
     const lateDays = filteredData.filter((i) => i.status === 'Late').length;
 
@@ -369,6 +403,16 @@ const EmployeeAttendance = () => {
         return { ...styles.statusBadge, ...styles.woBadge };
       case 'HO':
         return { ...styles.statusBadge, ...styles.hoBadge };
+      case 'ALF':
+        return { ...styles.statusBadge, backgroundColor: '#fff3cd', color: '#664d03',
+  };
+
+case 'ALH':
+  return {
+    ...styles.statusBadge,
+    backgroundColor: '#fff3cd',
+    color: '#664d03',
+  };
 
       default:
         return styles.statusBadge;
@@ -569,12 +613,14 @@ const EmployeeAttendance = () => {
               }))
             }
           >
-            <option value="">All Status</option>
-            <option value="Present">Present</option>
-            <option value="Absent">Absent</option>
-            <option value="Late">Late</option>
-            <option value="WO">WO</option>
-            <option value="HO">HO</option>
+<option value="">All Status</option>
+<option value="Present">Present</option>
+<option value="Absent">Absent</option>
+<option value="Late">Late</option>
+<option value="WO">Weekly Off</option>
+<option value="HO">Holiday</option>
+<option value="ALF">Annual Leave Full</option>
+<option value="ALH">Annual Leave Half</option>
           </select>
         </div>
 
@@ -599,35 +645,35 @@ const EmployeeAttendance = () => {
                 </tr>
               </thead>
 
-              <tbody>
-                {paginatedData.map((record) => (
-                  <tr
-                    key={record.id}
-                    style={styles.tableRow}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = '#f8f9fa')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'transparent')
-                    }
-                  >
-                    <td style={styles.tableCell}>
-                      {formatDate(record.date)}
-                    </td>
+<tbody>
+  {paginatedData.map((record) => (
+<tr
+  key={record.id}
+  style={{
+    ...styles.tableRow,
+    backgroundColor:
+      record.lateBy && record.lateBy !== '00:00:00'
+        ? '#fff3cd'   // 🟡 Late
+        : 'transparent',
+  }}
+>
+      <td style={styles.tableCell}>
+        {formatDate(record.date)}
+      </td>
 
-                    <td style={styles.tableCell}>
-                      <span style={getStatusBadgeStyle(record.status)}>
-                        {record.status}
-                      </span>
-                    </td>
+      <td style={styles.tableCell}>
+        <span style={getStatusBadgeStyle(record.status)}>
+          {statusLabels[record.status] || record.status}
+        </span>
+      </td>
 
-                    <td style={styles.tableCell}>{record.checkIn}</td>
-                    <td style={styles.tableCell}>{record.checkOut}</td>
-                    <td style={styles.tableCell}>{record.workingHours}</td>
-                    <td style={styles.tableCell}>{record.shift}</td>
-                  </tr>
-                ))}
-              </tbody>
+      <td style={styles.tableCell}>{record.checkIn}</td>
+      <td style={styles.tableCell}>{record.checkOut}</td>
+      <td style={styles.tableCell}>{record.workingHours}</td>
+      <td style={styles.tableCell}>{record.shift}</td>
+    </tr>
+  ))}
+</tbody>
             </table>
           )}
         </div>
