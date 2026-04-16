@@ -786,9 +786,7 @@ const EmployeeLeaveRequest = () => {
   <option value="">Select Leave Type</option>
 
   {leaveTypes.length > 0 ? (
-    leaveTypes
-      .filter(lt => lt.isActive)
-      .map(lt => (
+leaveTypes.map(lt => (
         <option key={lt.code} value={lt.code}>
           {lt.name}
         </option>

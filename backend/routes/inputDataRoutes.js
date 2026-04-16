@@ -12,7 +12,7 @@ const {
 
 const {
   protect,
-  authorizeDepartment
+  authorizeRoles
 } = require('../middleware/authMiddleware');
 
 
@@ -21,21 +21,51 @@ const {
 // =======================================
 
 // Upload Excel or frontend data
-router.post('/upload', protect, authorizeDepartment, uploadInputData);
+router.post(
+  '/upload',
+  protect,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
+  uploadInputData
+);
 
 // Get input data (FILTERED BY ROLE / UNIT)
-router.get('/', protect, authorizeDepartment, getAllInputData);
+router.get(
+  '/',
+  protect,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
+  getAllInputData
+);
 
 // Delete all data (hard reset)
-router.delete('/all', protect, authorizeDepartment, deleteAllInputData);
+router.delete(
+  '/all',
+  protect,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
+  deleteAllInputData
+);
 
 // Update one input row
-router.put('/:id', protect, authorizeDepartment, updateInputDataById);
+router.put(
+  '/:id',
+  protect,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
+  updateInputDataById
+);
 
 // Delete one input row
-router.delete('/:id', protect, authorizeDepartment, deleteInputDataById);
+router.delete(
+  '/:id',
+  protect,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
+  deleteInputDataById
+);
 
 // Bulk delete selected rows
-router.post('/delete-many', protect, authorizeDepartment, deleteManyInputData);
+router.post(
+  '/delete-many',
+  protect,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
+  deleteManyInputData
+);;
 
 module.exports = router;

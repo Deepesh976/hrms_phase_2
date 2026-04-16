@@ -47,12 +47,12 @@ router.post(
 );
 
 /**
- * Upload employees (Admin only)
+ * Upload employees (Admin, hrms_handler and unit_hr only)
  * Super Admin & HRMS Handler can upload employee data
  */
 router.post('/upload', 
   protect, 
-  requireAdmin,
+  authorizeRoles('super_admin', 'hrms_handler', 'unit_hr'),
   uploadEmployees
 );
 

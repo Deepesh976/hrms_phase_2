@@ -1,5 +1,5 @@
 // services/activity/holidayImpactService.js
-
+const Employee = require('../models/Employee');
 const Activity = require('../models/Activity');
 const {
   syncAttendanceWithSandwichRange,
@@ -34,7 +34,10 @@ function normalizeDate(date) {
 async function recalculateActivityForDate(date, holidayTitle = '') {
   const d = normalizeDate(date);
 
-  const empIds = await Activity.distinct('empId');
+  // ✅ Get ALL employees (IMPORTANT FIX)
+  const employees = await Employee.find({ empStatus: 'W' }).select('empId');
+  const empIds = employees.map(e => e.empId);
+
   if (!empIds.length) {
     console.warn('[HolidayImpact] No employees found');
     return { success: true, modifiedCount: 0, date: d };
@@ -45,24 +48,31 @@ async function recalculateActivityForDate(date, holidayTitle = '') {
       filter: {
         empId,
         date: d,
-        $or: [
-          { isStatusModified: { $ne: true } },
-          { isStatusModified: { $exists: false } }
-        ]
+        isStatusModified: { $ne: true } // ✅ Only skip manual edits
       },
-      update: {
-        $set: {
-          status: 'HO',
-          statusChangeReason: holidayTitle || 'Company Holiday',
-          statusChangeDate: new Date(),
-          isStatusModified: false // system-generated
-        },
-        $setOnInsert: {
-          empId,
-          date: d,
-          originalStatus: 'A'
+
+      // ✅ PIPELINE UPDATE (IMPORTANT)
+      update: [
+        {
+          $set: {
+            // Save original status before overriding
+            originalStatus: {
+              $cond: {
+                if: { $eq: ["$isStatusModified", true] },
+                then: "$originalStatus",
+                else: "$status"
+              }
+            },
+
+            status: 'HO',
+            statusChangeReason: holidayTitle || 'Company Holiday',
+            statusChangeDate: new Date(),
+
+            isStatusModified: false
+          }
         }
-      },
+      ],
+
       upsert: true
     }
   }));

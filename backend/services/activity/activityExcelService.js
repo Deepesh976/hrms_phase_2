@@ -75,7 +75,11 @@ const getPayrollCycleKey = (date) => {
    - 21 - Aug
    - ignores 21-Thu
 ========================= */
+
 const parseExcelDateCell = (cell, fromDate, toDate) => {
+
+  console.log("🧠 PARSER INPUT:", cell, "| TYPE:", typeof cell);
+
   if (!cell) return null;
 
   const text = String(cell).trim();
@@ -209,6 +213,9 @@ const processExcelRows = (rows, fromDate, toDate) => {
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i].map(v => String(v || '').trim());
 
+    console.log("🧾 RAW ROW:", rows[i]);
+    console.log("🔤 PROCESSED ROW:", row);
+
     /* =====================================================
        1️⃣ EMPLOYEE HEADER (UNCHANGED, FLOATING CELLS SAFE)
     ===================================================== */
@@ -249,17 +256,21 @@ const processExcelRows = (rows, fromDate, toDate) => {
     /* =====================================================
        2️⃣ DAYS ROW → 21-Aug 22-Aug ...
     ===================================================== */
-    if (row[0]?.toLowerCase() === 'days') {
-      dates = row
-        .slice(1)
-        .map(cell => parseExcelDateCell(cell, fromDate, toDate));
+if (row[0]?.toLowerCase() === 'days') {
 
-      console.log(
-        '📅 DATE HEADER LOCKED:',
-        dates.filter(Boolean).length
-      );
-      continue;
-    }
+  console.log("📅 DAYS ROW RAW:", rows[i]);
+
+  dates = row.slice(1).map((cell, index) => {
+
+    console.log(`📆 CELL[${index}] VALUE:`, cell, "| TYPE:", typeof cell);
+
+    return parseExcelDateCell(cell, fromDate, toDate);
+  });
+
+  console.log("✅ PARSED DATES:", dates);
+
+  continue;
+}
 
     /* =====================================================
        3️⃣ IGNORE WEEKDAY ROW → 21-Thu 22-Fri ...

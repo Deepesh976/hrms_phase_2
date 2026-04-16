@@ -108,7 +108,7 @@ const validateUploadDateRange = (req, res, next) => {
 router.patch(
   '/:id/status',
   protect,
-  authorizeRoles('super_admin', 'superadmin', 'admin', 'hrms_handler'),
+  authorizeRoles('super_admin', 'superadmin', 'admin', 'hrms_handler', 'unit_hr'),
   updateActivityStatus
 );
 
@@ -118,7 +118,7 @@ router.patch(
 router.post(
   '/upload',
   protect,
-  requireAdmin,
+  authorizeRoles('super_admin', 'superadmin', 'admin', 'unit_hr', 'hrms_handler'),
   uploadActivityData
 );
 
