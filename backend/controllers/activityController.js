@@ -110,12 +110,6 @@ const uploadActivityExcel = async (req, res) => {
     const fromNorm = normalizeLocalDate(fromDate);
     const toNorm = normalizeLocalDate(toDate);
 
-    /* ======================================================
-       1️⃣ DELETE OLD ACTIVITY (ONLY THIS RANGE)
-    ====================================================== */
-    await Activity.deleteMany({
-      date: { $gte: fromNorm, $lte: toNorm },
-    });
 
     /* ======================================================
        2️⃣ CLEAN EXCEL USING PYTHON
@@ -197,7 +191,7 @@ return {
     /* ==========================================
    🔐 Restrict UNIT HR to Their Own Unit
 ========================================== */
-if (req.user.role === 'unit_hr') {
+if (req.user?.role?.toLowerCase().replace(/[\s-]/g, '_') === 'unit_hr') {
   const employees = await Employee.find({
     empUnit: req.user.unit,
     empStatus: 'W'
@@ -209,7 +203,18 @@ if (req.user.role === 'unit_hr') {
     allowedEmpIds.includes(a.empId)
   );
 }
-    await Activity.insertMany(normalizedActivities, { ordered: false });
+    await Activity.bulkWrite(
+  normalizedActivities.map(a => ({
+    updateOne: {
+      filter: {
+        empId: a.empId,
+        date: a.date
+      },
+      update: { $set: a },
+      upsert: true
+    }
+  }))
+);
 
     /* ======================================================
    🔥 FORCE HOLIDAY OVERRIDE FOR UPLOADED RANGE
@@ -231,9 +236,9 @@ for (const holiday of holidays) {
 
 const empIds = [...new Set(normalizedActivities.map(a => a.empId))];
 
-for (const empId of empIds) {
-  await regenerateMonthlySummaryForEmployee(empId);
-}
+await Promise.all(
+  empIds.map(empId => regenerateMonthlySummaryForEmployee(empId))
+);
 
 /* ======================================================
    ✅ RESPONSE (ONLY ONCE)
@@ -264,7 +269,7 @@ const updateActivityStatus = async (req, res) => {
     const { id } = req.params;
     const { newStatus, changeReason } = req.body;
 
-    const role = req.user?.role?.toLowerCase();
+    const role = req.user?.role?.toLowerCase().replace(/[\s-]/g, '_');
     if (!EDIT_ROLES.includes(role)) {
       return res.status(403).json({
         success: false,
@@ -286,10 +291,17 @@ const updateActivityStatus = async (req, res) => {
       });
     }
 
-    const activity = await Activity.findById(id);
-    /* ==========================================
-   🔐 Restrict UNIT HR to Their Own Unit
-========================================== */
+const activity = await Activity.findById(id);
+
+// ✅ FIX: check first
+if (!activity) {
+  return res.status(404).json({
+    success: false,
+    message: 'Activity not found',
+  });
+}
+
+/* 🔐 Restrict UNIT HR */
 if (role === 'unit_hr') {
   const employee = await Employee.findOne({
     empId: activity.empId
@@ -302,12 +314,6 @@ if (role === 'unit_hr') {
     });
   }
 }
-    if (!activity) {
-      return res.status(404).json({
-        success: false,
-        message: 'Activity not found',
-      });
-    }
 
     /* 🔥 STORE ORIGINAL ONLY ONCE */
     if (!activity.isStatusModified) {
@@ -416,7 +422,7 @@ const deleteAllActivities = async (req, res) => {
   try {
 
     // UNIT HR → delete only their unit employees
-    if (req.user.role === 'unit_hr') {
+    if (req.user?.role?.toLowerCase().replace(/[\s-]/g, '_') === 'unit_hr') {
 
       const employees = await Employee.find({
         empUnit: req.user.unit,
@@ -516,7 +522,7 @@ const deleteActivitiesByDateRange = async (req, res) => {
     /* ======================================================
        🔐 Restrict UNIT HR to Their Own Unit
     ====================================================== */
-    if (req.user.role === 'unit_hr') {
+    if (req.user?.role?.toLowerCase().replace(/[\s-]/g, '_') === 'unit_hr') {
 
       const employees = await Employee.find({
         empUnit: req.user.unit,

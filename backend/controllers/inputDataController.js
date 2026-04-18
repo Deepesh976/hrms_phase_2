@@ -82,6 +82,12 @@ const uploadInputData = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or empty data array.' });
     }
 
+    const role = req.user?.role?.toLowerCase().replace(/[\s-]/g, '_');
+
+    // ✅ MOVE THIS HERE (outside map)
+    const normalizeUnit = (val) =>
+      val?.toString().trim().toUpperCase();
+
     const cleanedData = inputArray.map(item => {
       const parsedYear = Number(item.effectiveFromYear);
       const actualCTC = safeNum(item.ActualCTCWithoutLossOfPay);
@@ -90,7 +96,11 @@ const uploadInputData = async (req, res) => {
       return {
         EmpID: item.EmpID?.toString().trim(),
         EmpName: item.EmpName?.toString().trim() || '',
-        empUnit: item.Unit?.toString().trim(),
+
+        // ✅ FIXED
+        empUnit: normalizeUnit(
+          role === 'unit_hr' ? req.user.unit : item.Unit
+        ),
 
         ActualCTCWithoutLossOfPay: actualCTC,
         CONSILESALARY: breakdown.consileSalary,
@@ -152,6 +162,7 @@ const uploadInputData = async (req, res) => {
 
     const filter = req.activityFilter || {};
     const updatedAll = await InputData.find(filter);
+
     res.status(200).json(updatedAll);
 
   } catch (error) {
@@ -162,20 +173,20 @@ const uploadInputData = async (req, res) => {
     });
   }
 };
-
-
 // ==========================
 // ✅ Get all rows
 // ==========================
 const getAllInputData = async (req, res) => {
   try {
+    const role = req.user?.role?.toLowerCase().replace(/[\s-]/g, '_');
 
     let filter = {};
 
-    // If user is UNIT HR → show only their unit
-    if (req.user.role === "unit_hr") {
-      filter.empUnit = req.user.unit;
-    }
+if (role === 'unit_hr') {
+  filter.empUnit = {
+    $regex: new RegExp(`^${req.user.unit?.toString().trim()}$`, 'i')
+  };
+}
 
     const data = await InputData.find(filter);
 
@@ -221,10 +232,17 @@ const updateInputDataById = async (req, res) => {
       updates.TRP_ALW = breakdown.trpAlw;
       updates.O_ALW1 = breakdown.oAlw1;
     }
+const role = req.user?.role?.toLowerCase().replace(/[\s-]/g, '_');
 
-    const filter = {
+const filter = {
   _id: id,
-  ...(req.activityFilter || {})
+  ...(role === 'unit_hr'
+    ? {
+        empUnit: {
+          $regex: new RegExp(`^${req.user.unit?.toString().trim()}$`, 'i')
+        }
+      }
+    : {})
 };
 
 const updated = await InputData.findOneAndUpdate(filter, updates, { new: true });
@@ -252,7 +270,13 @@ const deleteInputDataById = async (req, res) => {
   try {
     const filter = {
   _id: req.params.id,
-  ...(req.activityFilter || {})
+  ...(req.user?.role === 'unit_hr'
+  ? {
+      empUnit: {
+        $regex: new RegExp(`^${req.user.unit?.toString().trim()}$`, 'i')
+      }
+    }
+  : {})
 };
 
 const deleted = await InputData.findOneAndDelete(filter);

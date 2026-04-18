@@ -12,6 +12,7 @@ import '../styles/inputdata.css';
 const expectedKeys = {
   EmpID: 'EmpID',
   EmpName: 'EmpName',
+  empUnit: 'Unit',
   ActualCTCWithoutLossOfPay: 'Actual CTC Without Loss Of Pay',
   CONSILESALARY: 'CONSILE SALARY',
   Basic: 'Basic',

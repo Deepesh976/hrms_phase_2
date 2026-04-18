@@ -150,11 +150,12 @@ const generateSlipPDF = async (slip) => {
 // ===============================
 let logoFile = 'apdp_logo.png'; // default
 
-if (
-  slip.empUnit &&
-  String(slip.empUnit).trim().toUpperCase() === 'APCP'
-) {
-  logoFile = 'apcp_logo.png';
+const unit = String(slip.empUnit || '').trim().toUpperCase();
+
+if (unit === 'CORP') {
+  logoFile = 'corp_logo.png';
+} else if (unit === 'APDP') {
+  logoFile = 'apdp_logo.png';
 }
 
 const logoPath = path.join(__dirname, '../templates', logoFile);

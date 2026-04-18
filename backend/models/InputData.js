@@ -20,6 +20,8 @@ const inputDataSchema = new mongoose.Schema(
 empUnit: {
   type: String,
   required: true,
+  uppercase: true,   // ✅ ADD THIS
+  trim: true,        // ✅ ALSO ADD
   index: true
 },
 
