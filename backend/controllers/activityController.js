@@ -307,7 +307,10 @@ if (role === 'unit_hr') {
     empId: activity.empId
   });
 
-  if (!employee || employee.empUnit !== req.user.unit) {
+  if (
+    !employee ||
+    employee.empUnit?.toLowerCase().trim() !== req.user.unit?.toLowerCase().trim()
+  ) {
     return res.status(403).json({
       success: false,
       message: 'You can only modify attendance of your own unit employees'
