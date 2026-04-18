@@ -13,6 +13,9 @@ const protect = (req, res, next) => {
     req.headers.authorization.startsWith('Bearer ')
   ) {
     token = req.headers.authorization.split(' ')[1];
+
+      console.log("TOKEN:", token);
+  console.log("JWT_SECRET:", process.env.JWT_SECRET);
   }
 
   if (!token) {
@@ -63,9 +66,18 @@ const authorizeRoles = (...roles) => {
       });
     }
 
-    const userRole = req.user.role.toLowerCase().trim();
+const userRole = req.user?.role
+  ?.toLowerCase()
+  ?.trim()
+  ?.replace(/[-\s]/g, '_');   // 🔥 handles unit-hr / unit hr
 
-    const allowedRoles = roles.map(r => r.toLowerCase().trim());
+const allowedRoles = roles.map(r =>
+  r.toLowerCase().trim().replace(/[-\s]/g, '_')
+);
+
+console.log("USER ROLE:", req.user.role);
+console.log("NORMALIZED ROLE:", userRole);
+console.log("ALLOWED ROLES:", allowedRoles);
 
     if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
